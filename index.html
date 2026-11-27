@@ -71,7 +71,7 @@ button { font: inherit; cursor: pointer; border: 0; }
 /* ---------- hero ---------- */
 .hero {
   display: flex; flex-direction: column; align-items: center;
-  text-align: center; padding: 64px 24px 140px;
+  text-align: center; padding: 64px 24px 24px;
 }
 .hero__graphic { width: 100%; max-width: 1000px; height: auto; display: block; margin: 8px 0 120px; }
 .hg__boundary { fill: #E9E5D9; }
@@ -507,6 +507,26 @@ body.scope-dark .lens-ic-t { fill: #B8700A !important; }
 .poster-modal__close { position: absolute; top: 6px; right: 10px; font-size: 28px; line-height: 1; color: var(--ink); background: none; border: 0; cursor: pointer; }
 .canvas-item.has-poster { cursor: zoom-in; }
 
+html { scroll-behavior: smooth; }
+section[id] { scroll-margin-top: 72px; }
+
+.hero__nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 0 32px; }
+.hero__nav a { font-size: 16px; color: var(--ink); background: var(--olive); text-decoration: none; padding: 9px 18px; transition: background-color .2s, color .2s; }
+.hero__nav a:hover, .hero__nav a:focus-visible { background: #4A4A47; color: #fff; }
+.hero__graphic { max-width: 900px; }
+.hero__nav { margin: 36px 0 0; }
+.hero__title { margin-bottom: 28px; }
+
+/* hero nav: sticks to the top while scrolling */
+.hero__nav-slot { margin-top: 64px; align-self: stretch; }
+.hero__nav-slot .hero__nav { margin: 0; padding: 12px 24px; transition: background-color .45s ease; }
+.hero__nav.is-fixed { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: var(--paper); }
+body.scope-dark .hero__nav.is-fixed { background: #1B1919; }
+
+.hero__nav a { transition: font-size .3s ease, padding .3s ease, background-color .2s, color .2s; }
+.hero__nav.is-fixed a { font-size: 12px; padding: 7px 14px; }
+#essence { padding-top: 56px; }
+
 </style>
 </head>
 <body>
@@ -525,6 +545,7 @@ body.scope-dark .lens-ic-t { fill: #B8700A !important; }
 
     <div class="hero__def">
       <p class="hero__src">Systemic Design Association, Jones(2021), Design Council의 정의를 종합</p>
+    <div class="hero__nav-slot"><nav class="hero__nav" aria-label="섹션 이동"><a href="#essence">시스테믹 디자인의 본질</a><a href="#scope">더 큰 차원의 디자인</a><a href="#journey">시스테믹 디자인의 7단계</a><a href="#canvas">툴키트</a></nav></div>
     </div>
   </section>
 
@@ -708,10 +729,6 @@ body.scope-dark .lens-ic-t { fill: #B8700A !important; }
       <a class="cta" href="https://www.systemicdesigntoolkit.org/methodology" target="_blank" rel="noopener">툴킷 방법론 보기 →</a>
       <a class="cta cta--ghost" href="https://www.systemicdesigntoolkit.org/download" target="_blank" rel="noopener">캔버스 내려받기 →</a>
     </div>
-    <blockquote class="closing">
-      <p>모든 시스템 지도는 결국 하나의 모델일 뿐이다.<br>그러니 꺼내서 보여주고, 다른 사람이 고치고 더하게 하라.</p>
-      <cite>— Donella Meadows의 말을 풀어 옮김 (툴킷 가이드 수록)</cite>
-    </blockquote>
   </section>
 
   <footer class="footer">
@@ -1114,6 +1131,20 @@ document.querySelectorAll(".canvas-item[data-thumb]").forEach(a => {
   a.classList.add("has-poster");
   a.addEventListener("click", e => { e.preventDefault(); openPoster(k); });
 });
+
+/* 히어로 버튼 네비게이션: 스크롤해서 지나가면 화면 위에 고정 */
+const navSlot = document.querySelector(".hero__nav-slot");
+const heroNav = navSlot && navSlot.querySelector(".hero__nav");
+if (heroNav) {
+  const fixNav = () => {
+    // 원래(큰) 크기일 때의 높이만 자리로 남겨 두어, 작아져도 아래 내용이 튀지 않게
+    if (!heroNav.classList.contains("is-fixed")) navSlot.style.height = heroNav.offsetHeight + "px";
+    heroNav.classList.toggle("is-fixed", navSlot.getBoundingClientRect().top <= 0);
+  };
+  window.addEventListener("scroll", fixNav, { passive: true });
+  window.addEventListener("resize", () => { heroNav.classList.remove("is-fixed"); fixNav(); });
+  fixNav();
+}
 
 </script>
 </body>
