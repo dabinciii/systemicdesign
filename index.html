@@ -497,6 +497,16 @@ body.scope-dark .lens-ic-t { fill: #B8700A !important; }
 .canvas-credit { margin-top: 14px; text-align: center; }
 .poster-pop.is-wide { width: 480px; }
 
+/* poster modal (click) */
+.poster-modal { position: fixed; inset: 0; z-index: 60; background: rgba(27,25,25,.72); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.poster-modal[hidden] { display: none; }
+.poster-modal__box { position: relative; background: #fff; padding: 16px 16px 20px; width: min(520px, 100%); max-height: calc(100vh - 48px); overflow: auto; text-align: center; }
+.poster-modal.is-wide .poster-modal__box { width: min(820px, 100%); }
+.poster-modal__box img { display: block; width: 100%; height: auto; }
+.poster-modal__cap { font-size: 12px; color: var(--ink-3); margin: 10px 0 14px; }
+.poster-modal__close { position: absolute; top: 6px; right: 10px; font-size: 28px; line-height: 1; color: var(--ink); background: none; border: 0; cursor: pointer; }
+.canvas-item.has-poster { cursor: zoom-in; }
+
 </style>
 </head>
 <body>
@@ -689,11 +699,11 @@ body.scope-dark .lens-ic-t { fill: #B8700A !important; }
         툴킷의 도구들은 대부분 여럿이 함께 채우는 큰 캔버스입니다. 시스테믹 디자인의 결과물은 해결책이기 이전에,
         서로 다른 사람들이 같은 시스템을 함께 볼 수 있게 만드는 그림입니다.<br><br>
         이 페이지에서 소개한 도구 18개를 단계별로 모았습니다.<br>
-        캔버스를 누르면 Systemic Design Toolkit 웹사이트로 이동합니다.
+        캔버스를 누르면 실제 도구 포스터를 크게 볼 수 있습니다.
       </p>
     </div>
     <div class="canvas-grid" id="canvasGrid"></div>
-    <p class="note canvas-credit">※ 캔버스에 마우스를 올리면 실제 도구 포스터가 보입니다(13개). 포스터: Jones &amp; Van Ael, <i>Design Journeys through Complex Systems</i> 도구 포스터, Namahn · shiftN · Systemic Design Association, CC BY-NC-ND 4.0.</p>
+    <p class="note canvas-credit">※ 포스터가 있는 캔버스(13개)는 누르면 원본 포스터와 템플릿 다운로드 링크가 열립니다. 포스터: Jones &amp; Van Ael, <i>Design Journeys through Complex Systems</i> 도구 포스터, Namahn · shiftN · Systemic Design Association, CC BY-NC-ND 4.0.</p>
     <div class="canvas-cta">
       <a class="cta" href="https://www.systemicdesigntoolkit.org/methodology" target="_blank" rel="noopener">툴킷 방법론 보기 →</a>
       <a class="cta cta--ghost" href="https://www.systemicdesigntoolkit.org/download" target="_blank" rel="noopener">캔버스 내려받기 →</a>
@@ -1064,33 +1074,45 @@ const POSTERS = {
   multicap: "Multicapitals Systems Map", value: "Value Proposition", scenario: "Future State Scenarios",
   strategy: "Intervention Strategy", collab: "Collaboration Model", roadmap: "Roadmap for Transition by Design"
 };
-const pop = document.createElement("figure");
-pop.className = "poster-pop";
-pop.innerHTML = '<img alt=""><figcaption></figcaption>';
-document.body.appendChild(pop);
-const popImg = pop.querySelector("img"), popCap = pop.querySelector("figcaption");
-const canHover = window.matchMedia("(hover: hover)").matches;
-function placePop(e) {
-  const w = pop.offsetWidth, h = pop.offsetHeight, m = 16;
-  let x = e.clientX + 24, y = e.clientY - h / 2;
-  if (x + w > innerWidth - m) x = e.clientX - w - 24;
-  y = Math.max(m, Math.min(y, innerHeight - h - m));
-  pop.style.transform = `translate(${x}px, ${y}px)`;
+/* 클릭하면 실제 포스터를 크게 보여주고, 아래에 템플릿 다운로드 버튼 */
+const DOWNLOAD_URL = "https://www.systemicdesigntoolkit.org/download";
+const modal = document.createElement("div");
+modal.className = "poster-modal";
+modal.setAttribute("role", "dialog");
+modal.setAttribute("aria-modal", "true");
+modal.hidden = true;
+modal.innerHTML = `
+  <div class="poster-modal__box">
+    <button class="poster-modal__close" aria-label="닫기">×</button>
+    <img alt="">
+    <p class="poster-modal__cap"></p>
+    <div class="poster-modal__actions">
+      <a class="cta" href="${DOWNLOAD_URL}" target="_blank" rel="noopener">툴킷 템플릿 다운로드 페이지로 →</a>
+    </div>
+  </div>`;
+document.body.appendChild(modal);
+const mImg = modal.querySelector("img"), mCap = modal.querySelector(".poster-modal__cap");
+let lastFocus = null;
+function openPoster(k) {
+  mImg.src = (window.POSTER_DATA && window.POSTER_DATA[k]) || `images/tools/${k}.jpg`;
+  mImg.alt = `${POSTERS[k]} 캔버스`;
+  mCap.textContent = `${POSTERS[k]} — Systemic Design Toolkit (CC BY-NC-ND 4.0)`;
+  modal.classList.toggle("is-wide", ["actants","archetype","collab","roadmap"].includes(k));
+  lastFocus = document.activeElement;
+  modal.hidden = false; document.body.style.overflow = "hidden";
+  modal.querySelector(".poster-modal__close").focus();
 }
+function closePoster() {
+  modal.hidden = true; document.body.style.overflow = "";
+  if (lastFocus) lastFocus.focus();
+}
+modal.addEventListener("click", e => { if (e.target === modal || e.target.closest(".poster-modal__close")) closePoster(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closePoster(); });
 document.querySelectorAll(".canvas-item[data-thumb]").forEach(a => {
   const k = a.dataset.thumb;
   if (!POSTERS[k]) return;
   a.classList.add("has-poster");
-  if (!canHover) return;
-  a.addEventListener("mouseenter", e => {
-    popImg.src = (window.POSTER_DATA && window.POSTER_DATA[k]) || `images/tools/${k}.jpg`;
-    popImg.alt = `${POSTERS[k]} 캔버스`;
-    popCap.textContent = `${POSTERS[k]} — Systemic Design Toolkit`;
-    pop.classList.toggle("is-wide", ["actants","archetype","collab","roadmap"].includes(k));
-    pop.classList.add("is-on"); placePop(e);
-  });
-  a.addEventListener("mousemove", placePop);
-  a.addEventListener("mouseleave", () => pop.classList.remove("is-on"));
+  a.addEventListener("click", e => { e.preventDefault(); openPoster(k); });
 });
 
 </script>
